@@ -22,8 +22,7 @@ const getUserWithEmail = function(email) {
     .then((result) => {
       if (result.rows) {
         return result.rows[0];
-      }
-      else {
+      } else {
         return null;
       }
     })
@@ -83,8 +82,24 @@ exports.addUser = addUser;
  * @return {Promise<[{}]>} A promise to the reservations.
  */
 const getAllReservations = function(guest_id, limit = 10) {
-  return getAllProperties(null, 2);
-}
+  return pool
+    .query (
+      `SELECT reservations.*, properties.*, AVG(property_reviews.rating) as average_rating from reservations
+      JOIN properties on reservations.property_id = properties.id
+      JOIN property_reviews on properties.id = property_reviews.property_id
+      WHERE reservations.guest_id = $1
+      GROUP BY properties.id, reservations.id
+      ORDER BY reservations.start_date
+      LIMIT $2;`,
+      [guest_id, limit]
+    )
+    .then ((result) => {
+      return result.rows;
+    })
+    .catch ((error) => {
+      console.log(error.message);
+    });
+};
 exports.getAllReservations = getAllReservations;
 
 /// Properties
